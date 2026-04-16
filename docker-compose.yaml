@@ -1,0 +1,333 @@
+services:
+  kafka-1:
+    image: apache/kafka:4.2.0
+    container_name: kafka_1
+    hostname: kafka-1
+    ports:
+      - "19094:9094"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:19094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_1_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kafka-2:
+    image: apache/kafka:4.2.0
+    container_name: kafka_2
+    hostname: kafka-2
+    ports:
+      - "29094:9094"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_2_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kafka-3:
+    image: apache/kafka:4.2.0
+    container_name: kafka_3
+    hostname: kafka-3
+    ports:
+      - "39094:9094"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:39094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_3_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kafka-init-topics:
+    image: apache/kafka:4.2.0
+    container_name: kafka_init_topics
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - >
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
+        --create --if-not-exists --topic orders --partitions 3 --replication-factor 3 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
+        --create --if-not-exists --topic payments --partitions 3 --replication-factor 3 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
+        --create --if-not-exists --topic clicks --partitions 2 --replication-factor 3 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
+        --create --if-not-exists --topic orders-enriched --partitions 3 --replication-factor 3 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --list
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka_ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-streaming-lab
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  spark-master:
+    image: apache/spark:4.0.0
+    container_name: spark-master
+    hostname: spark-master
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8080
+    volumes:
+      - ./spark-events:/tmp/spark-events
+    entrypoint:
+      - "bash"
+      - "-c"
+      - "/opt/spark/sbin/start-master.sh && tail -f /dev/null"
+
+  spark-worker-1:
+    image: apache/spark:4.0.0
+    container_name: spark-worker-1
+    hostname: spark-worker-1
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    volumes:
+      - ./spark-events:/tmp/spark-events
+    entrypoint:
+      - "bash"
+      - "-c"
+      - "/opt/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /dev/null"
+
+  spark-worker-2:
+    image: apache/spark:4.0.0
+    container_name: spark-worker-2
+    hostname: spark-worker-2
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    volumes:
+      - ./spark-events:/tmp/spark-events
+    entrypoint:
+      - "bash"
+      - "-c"
+      - "/opt/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /dev/null"
+
+  spark-history-server:
+    image: apache/spark:4.0.0
+    container_name: spark-history-server
+    hostname: spark-history-server
+    ports:
+      - "18080:18080"
+    depends_on:
+      - spark-master
+    entrypoint:
+      - "bash"
+      - "-c"
+      - "/opt/spark/bin/spark-class org.apache.spark.deploy.history.HistoryServer"
+    environment:
+      - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/tmp/spark-events
+    volumes:
+      - ./spark-events:/tmp/spark-events
+  generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: event_generator
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      ORDERS_TOPIC: orders
+      PAYMENTS_TOPIC: payments
+      ORDER_SCHEMA_PATH: /app/schemas/order-value.schema.json
+      PAYMENT_SCHEMA_PATH: /app/schemas/payment-value.schema.json
+      ORDERS_INTERVAL_SEC: "0.5"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      kafka-init-topics:
+        condition: service_completed_successfully
+    command: ["python", "generator/generator.py"]
+
+  aggregator:
+    image: apache/spark:4.0.0
+    container_name: spark-aggregator
+    restart: on-failure
+    depends_on:
+      kafka-init-topics:
+        condition: service_completed_successfully
+      spark-master:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      ORDERS_TOPIC: orders
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      CHECKPOINT_DIR: /tmp/checkpoints/aggregator
+      WINDOW_DURATION: 1 minute
+      WATERMARK_DELAY: 30 seconds
+      TRIGGER_INTERVAL: 10 seconds
+    volumes:
+      - ./spark:/opt/spark/work-dir/jobs
+      - ./spark-events:/tmp/spark-events
+      - ./ivy-cache:/tmp/.ivy2
+      - ./checkpoints:/tmp/checkpoints
+    ports:
+      - "4040:4040"
+    entrypoint:
+      - "bash"
+      - "-c"
+      - >
+        mkdir -p /tmp/.ivy2/cache /tmp/.ivy2/jars /tmp/checkpoints/aggregator &&
+        /opt/spark/bin/spark-submit
+        --master spark://spark-master:7077
+        --conf spark.cores.max=2
+        --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0,org.postgresql:postgresql:42.7.3
+        --conf spark.eventLog.enabled=true
+        --conf spark.eventLog.dir=file:///tmp/spark-events
+        --conf spark.sql.shuffle.partitions=6
+        --conf spark.jars.ivy=/tmp/.ivy2
+        /opt/spark/work-dir/jobs/aggregator.py
+
+  stream-enricher:
+    image: apache/spark:4.0.0
+    container_name: spark-enricher
+    profiles: ["enrich"]
+    restart: on-failure
+    depends_on:
+      kafka-init-topics:
+        condition: service_completed_successfully
+      spark-master:
+        condition: service_started
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      ORDERS_TOPIC: orders
+      PAYMENTS_TOPIC: payments
+      OUTPUT_TOPIC: orders-enriched
+      CHECKPOINT_DIR: /tmp/checkpoints/stream_enricher
+    volumes:
+      - ./spark:/opt/spark/work-dir/jobs
+      - ./spark-events:/tmp/spark-events
+      - ./ivy-cache:/tmp/.ivy2
+      - ./checkpoints:/tmp/checkpoints
+    ports:
+      - "4041:4040"
+    entrypoint:
+      - "bash"
+      - "-c"
+      - >
+        mkdir -p /tmp/.ivy2/cache /tmp/.ivy2/jars /tmp/checkpoints/stream_enricher &&
+        /opt/spark/bin/spark-submit
+        --master spark://spark-master:7077
+        --conf spark.cores.max=2
+        --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0
+        --conf spark.eventLog.enabled=true
+        --conf spark.eventLog.dir=file:///tmp/spark-events
+        --conf spark.sql.shuffle.partitions=6
+        --conf spark.jars.ivy=/tmp/.ivy2
+        /opt/spark/work-dir/jobs/stream_enricher.py
+
+volumes:
+  kafka_1_data:
+  kafka_2_data:
+  kafka_3_data:
+  postgres_data:

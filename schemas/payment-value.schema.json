@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Payment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payment_id", "order_id", "amount", "status"],
+  "properties": {
+    "payment_id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failed", "pending"]
+    }
+  }
+}

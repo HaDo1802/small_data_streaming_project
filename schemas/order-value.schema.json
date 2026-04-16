@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["order_id", "user", "item", "quantity", "price"],
+  "properties": {
+    "order_id": {
+      "type": "string"
+    },
+    "user": {
+      "type": "string",
+      "minLength": 1
+    },
+    "item": {
+      "type": "string",
+      "minLength": 1
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}
