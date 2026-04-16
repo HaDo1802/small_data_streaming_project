@@ -121,8 +121,6 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
         --create --if-not-exists --topic payments --partitions 3 --replication-factor 3 &&
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
-        --create --if-not-exists --topic clicks --partitions 2 --replication-factor 3 &&
-        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092
         --create --if-not-exists --topic orders-enriched --partitions 3 --replication-factor 3 &&
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --list
 

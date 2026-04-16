@@ -16,3 +16,8 @@ metastore_db/
 postgres_data/
 *.log
 ivy-cache
+spark-events/
+spark-logs/
+spark-logs-*
+logs/
+
