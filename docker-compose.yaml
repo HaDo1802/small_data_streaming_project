@@ -1,4 +1,5 @@
 services:
+  # ── Kafka cluster (3-broker KRaft, no ZooKeeper) ────────────────────────────
   kafka-1:
     image: apache/kafka:4.2.0
     container_name: kafka_1
@@ -101,6 +102,7 @@ services:
       retries: 20
       start_period: 20s
 
+  # ── Topic bootstrap (runs once, exits) ──────────────────────────────────────
   kafka-init-topics:
     image: apache/kafka:4.2.0
     container_name: kafka_init_topics
@@ -124,6 +126,7 @@ services:
         --create --if-not-exists --topic orders-enriched --partitions 3 --replication-factor 3 &&
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --list
 
+  # ── Kafka UI ─────────────────────────────────────────────────────────────────
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka_ui
@@ -140,6 +143,7 @@ services:
       kafka-3:
         condition: service_healthy
 
+  # ── Postgres (metrics sink) ──────────────────────────────────────────────────
   postgres:
     image: postgres:16
     container_name: postgres
@@ -158,13 +162,14 @@ services:
       timeout: 5s
       retries: 20
 
+  # ── Spark cluster ────────────────────────────────────────────────────────────
   spark-master:
     image: apache/spark:4.0.0
     container_name: spark-master
     hostname: spark-master
     ports:
-      - "8081:8080"
-      - "7077:7077"
+      - "8081:8080"   # Spark Master Web UI
+      - "7077:7077"   # Spark master RPC
     environment:
       - SPARK_MASTER_HOST=spark-master
       - SPARK_MASTER_PORT=7077
@@ -224,6 +229,8 @@ services:
       - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/tmp/spark-events
     volumes:
       - ./spark-events:/tmp/spark-events
+
+  # ── Event generator ──────────────────────────────────────────────────────────
   generator:
     build:
       context: .
@@ -245,6 +252,7 @@ services:
         condition: service_completed_successfully
     command: ["python", "generator/generator.py"]
 
+  # ── Spark streaming jobs ─────────────────────────────────────────────────────
   aggregator:
     image: apache/spark:4.0.0
     container_name: spark-aggregator
@@ -272,7 +280,7 @@ services:
       - ./ivy-cache:/tmp/.ivy2
       - ./checkpoints:/tmp/checkpoints
     ports:
-      - "4040:4040"
+      - "4040:4040"   # Aggregator Spark UI
     entrypoint:
       - "bash"
       - "-c"
@@ -288,6 +296,8 @@ services:
         --conf spark.jars.ivy=/tmp/.ivy2
         /opt/spark/work-dir/jobs/aggregator.py
 
+  # Profile: enrich — start explicitly with:
+  #   docker compose --profile enrich up -d stream-enricher
   stream-enricher:
     image: apache/spark:4.0.0
     container_name: spark-enricher
@@ -310,7 +320,7 @@ services:
       - ./ivy-cache:/tmp/.ivy2
       - ./checkpoints:/tmp/checkpoints
     ports:
-      - "4041:4040"
+      - "4041:4040"   # Enricher Spark UI
     entrypoint:
       - "bash"
       - "-c"
